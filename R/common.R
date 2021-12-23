@@ -102,7 +102,7 @@ list2env(parseTOML(file.path(datapath, CONFIG_FILE)), globalenv())
 # Define timespan
 TIMESPAN <- c(TIME_START:TIME_END)
 # ALA needs an email address for some reason
-ala_config(email=ALA_EMAIL)
+galah_config(email=ALA_EMAIL)
 # In case downloads run out of time
 options(timeout=500)
 
