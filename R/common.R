@@ -1,5 +1,6 @@
 # Package names
-packages <- c("galah", "fpc", "lubridate", "sf", "terra", "tidyverse", "fs", "RcppTOML")
+packages <- c("galah", "fpc", "lubridate", "sf", "terra", "tidyverse",
+        "fs", "RcppTOML")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -112,13 +113,18 @@ options(timeout=500)
 
 # Get filters for ALA queries, ahead of time as this actually pings the 
 # server to check the filter. Doing this too often can cause ALA to hang.
-ALA_FILTERS = select_filters(
+# either use '==' or '%in%' for this...
+ALA_FILTERS = galah_filter(
   # Limit observations by year, basis and state
-  year = TIMESPAN,
-  basisOfRecord = BASIS,
-  stateProvince = STATE
+  year %in% TIMESPAN,
+  basisOfRecord %in% BASIS,
+  stateProvince == STATE
 )
 
 mask_layer <- terra::rast(HABITAT_RASTER_PATH) < 0
-terra::crs(mask_layer) < as.character(sp::CRS(paste0("+init=epsg:", METRIC_EPSG)))
+# terra::crs(mask_layer) <- as.character(sp::CRS(paste0("+init=epsg:", METRIC_EPSG)))
+terra::crs(mask_layer) <- sp::CRS(paste0("+init=epsg:", METRIC_EPSG))
 # plot(mask_layer)
+# interactive plot of map
+# library(mapview)
+# mapview(raster::raster(mask_layer))
