@@ -51,12 +51,12 @@ sensitivity_title <- function(...) {
   paste(..., SENSITIVITY_SUFFIX, sep=" ")
 }
 
-# Run parameters ######################################################################
+# Run parameters ###############################################################
 
 # Primary path for all input data
 datapath <- file.path(path_home(), "data")
 
-# Paths to files and folders #########################################################
+# Paths to files and folders ###################################################
 taxapath <- file.path(datapath, "taxa")
 groupingspath <- file.path(datapath, "groupings")
 dir.create(taxapath, recursive = TRUE)
@@ -113,16 +113,19 @@ options(timeout=500)
 
 # Get filters for ALA queries, ahead of time as this actually pings the 
 # server to check the filter. Doing this too often can cause ALA to hang.
-# either use '==' or '%in%' for this...
+# either use '==' (or '%in%' for this...?)
 ALA_FILTERS = galah_filter(
   # Limit observations by year, basis and state
-  year %in% TIMESPAN,
-  basisOfRecord %in% BASIS,
+  year == TIMESPAN,
+  basisOfRecord == BASIS,
   stateProvince == STATE
 )
 
 mask_layer <- terra::rast(HABITAT_RASTER_PATH) < 0
-# terra::crs(mask_layer) <- as.character(sp::CRS(paste0("+init=epsg:", METRIC_EPSG)))
+# terra::crs(mask_layer) <- as.character(sp::CRS(paste0("+init=epsg:",
+#   METRIC_EPSG)))
+
+## this apparently works but throws some errors:
 terra::crs(mask_layer) <- sp::CRS(paste0("+init=epsg:", METRIC_EPSG))
 # plot(mask_layer)
 # interactive plot of map

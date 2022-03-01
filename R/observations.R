@@ -1,7 +1,9 @@
 
-# Get observation data, precluster it into numbered groups, and write to both csv and raster files ##
+# Get observation data, precluster it into numbered groups,
+# and write to both csv and raster files ##
 # Main method called from scripts 
-process_observations <- function(taxa, mask_layer, taxapath, force_download=FALSE, throw_errors=FALSE) {
+process_observations <- function(taxa, mask_layer, taxapath,
+    force_download=FALSE, throw_errors=FALSE) {
   # Add new columns to taxa dataframe
   preclustered_taxa <- add_column(taxa, 
     num_preclusters = 0, 
@@ -13,7 +15,8 @@ process_observations <- function(taxa, mask_layer, taxapath, force_download=FALS
   num_preclusters <- 0
 
   # Loop over each taxa
-  # We do some slightly complicated return value handling here to allow for error catching.
+  # We do some slightly complicated return value handling here
+  # to allow for error catching.
   for (i in 1:nrow(preclustered_taxa)) {
     taxon <- preclustered_taxa[i, ] 
     cat("\nTaxon: ", taxon$ala_search_term, "\n")
@@ -65,7 +68,7 @@ try_taxon_observations <- function(taxon, taxapath, force_download) {
 }
 
 # Load and filter observations
-
+### HAS TYPO 'dowload'
 load_and_filter <- function(taxon, taxapath, force_download) {
   load_or_dowload_obs(taxon, taxapath, force_download) %>%
     filter_observations(taxon) %>%
@@ -76,6 +79,7 @@ load_and_filter <- function(taxon, taxapath, force_download) {
 # Retrieving observation data from ALA ######################################################
 
 # Download or load cached observation data
+### HAS TYPO 'dowload'
 load_or_dowload_obs <- function(taxon, taxapath, force_download=FALSE) {
   obs_csv_path <- file.path(taxon_path(taxon, taxapath), "observations.csv")
   if (!force_download && file.exists(obs_csv_path)) {
@@ -153,6 +157,7 @@ precluster_observations <- function(obs, taxon) {
 }
 
 # Add transformed coordinates "x" an "y" for accurate distance calculations
+## HAS TYPO 'euclidan'
 add_euclidan_coords <- function(obs) {
   sf::st_as_sf(obs, coords = c("decimalLongitude", "decimalLatitude"), crs = LATLON_EPSG) %>% 
     sf::st_transform(crs = METRIC_EPSG) %>% 
@@ -348,3 +353,4 @@ label_no_clusters <- function(taxa) {
   taxa$filter_category[id] <- "no_clusters"  
   return(taxa)
 }
+

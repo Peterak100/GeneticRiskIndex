@@ -34,15 +34,19 @@ precategorize_chunk <- function(taxa) {
 add_count_cols <- function(taxa) {
   cat("\nGetting taxon counts for initial filtering...\n")
   count_taxa <- filter(taxa, assess == "ALA") 
-  state_counts <- get_state_counts(count_taxa) %>% rename(state_count = count, ala_search_term = species)
+  state_counts <- get_state_counts(count_taxa) %>%
+    rename(state_count = count, ala_search_term = species)
   all_counts <- get_all_counts(count_taxa) %>% rename(ala_search_term = species)
   taxa <- left_join(taxa, state_counts, by = "ala_search_term", all.x=TRUE)
   taxa <- left_join(taxa, all_counts, by = "ala_search_term", all.x=TRUE)
-  cat("Counts retreived successfully.\n\n")
+  cat("Counts retrieved successfully.\n\n")
   return(taxa)
 }
 
-# Retreive state counts from ALA
+# Retrieve state counts from ALA
+### since v1.4
+### use galah_identify() instead of select_taxa()
+### use atlas_counts() instead of ala_counts()
 get_state_counts <- function(taxa) {
   ala_counts(
     taxa = select_taxa(taxa$ala_search_term), 
@@ -53,7 +57,7 @@ get_state_counts <- function(taxa) {
   )
 }
 
-# Retreive national counts from ALA
+# Retrieve national counts from ALA
 get_all_counts <- function(taxa) {
   ala_counts(
     taxa = select_taxa(taxa$ala_search_term), 
@@ -108,13 +112,17 @@ label_not_assessed <- function(taxa) {
   return(taxa)
 }
 
+## added a return after '&'
 label_isolation_by_distance <- function(taxa) {
-  taxa$filter_category[is.na(taxa$filter_category) & taxa$disperse_model == "Distance"] <- "isolation_by_distance"
+  taxa$filter_category[is.na(taxa$filter_category) &
+                taxa$disperse_model == "Distance"] <- "isolation_by_distance"
   return(taxa)
 }
 
+## added a return after '&'
 label_isolation_by_resistance <- function(taxa) {
-  taxa$filter_category[is.na(taxa$filter_category) & taxa$disperse_model == "Habitat"] <- "isolation_by_resistance"
+  taxa$filter_category[is.na(taxa$filter_category) &
+                taxa$disperse_model == "Habitat"] <- "isolation_by_resistance"
   return(taxa)
 }
 

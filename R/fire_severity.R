@@ -1,10 +1,11 @@
-# Remove obsevations according to fire severity at the location
+# Remove observations according to fire severity at the location
 # obs are observations returned by galah,
 # taxon is a single row of the taxa dataframe
 
 # See https://www.environment.vic.gov.au/biodiversity/naturekit/nk-datalists
 
-# The Fire Severity layer shows the Fire severity map of the major fires in Gippsland and north east Victoria in 2019/20.
+# The Fire Severity GeoTiff layer shows the Fire severity map of the major fires
+# in Gippsland and north east Victoria in 2019/20.
 
 # Fire severity classes are:
 

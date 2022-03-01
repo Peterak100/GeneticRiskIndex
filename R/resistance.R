@@ -57,7 +57,8 @@ habitat_to_resistance <- function(habitat_raster) {
   101 - habitat_raster
 }
 
-# Crop a section of the generic HDM resistance file as the resisance file for this taxon
+# Crop a section of the generic HDM resistance file as the
+# resistance file for this taxon
 use_generic_hdm <- function(taxon, taxapath, crop_filename) {
   cat("Using generic resistance HDM for", taxon$ala_search_term, "\n")
   resistance_filename <- file.path(taxon_path(taxon, taxapath), RESISTANCE_RASTER)
