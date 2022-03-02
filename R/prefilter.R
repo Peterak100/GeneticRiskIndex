@@ -7,7 +7,7 @@ source("fire_severity.R")
 
 # Load main taxa dataframe from csv ###################################################
 taxa <- read.csv(BATCH_TAXA_CSV_PATH, header = TRUE)
-head(taxa)
+# head(taxa)
 
 #######################################################################################
 # Precategorize based on counts

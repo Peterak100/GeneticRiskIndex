@@ -1,5 +1,6 @@
 setwd("/home/peter/GeneticRiskIndex/R")
-galah_config(email = "peterkriesner@yahoo.com")
+galah_config(email = "peterkriesner@yahoo.com", download_reason_id = 0,
+             verbose = TRUE)
 
 # Retrieve state counts from ALA
 ### use galah_identify() since v1.4 instead of select_taxa()
@@ -13,6 +14,7 @@ get_state_counts <- function(taxa) {
     galah_identify(taxa$ala_search_term) |>
     galah_filter(year >= 1960, basisOfRecord == BASIS2,
                  stateProvince == STATE) |>
+    galah_group_by("species") |>
     atlas_counts(type = "record", limit = NULL)
 }
 
@@ -21,6 +23,7 @@ get_all_counts <- function(taxa) {
   galah_call() |>
     galah_identify(taxa$ala_search_term) |>
     galah_filter(year >= 1960, basisOfRecord == BASIS2) |>
+    galah_group_by("species") |>
     atlas_counts(type = "record", limit = NULL)
 }
  
@@ -51,10 +54,10 @@ check1a <- galah_call() |>
   galah_identify("Tiliqua") |>
   galah_filter(year >= 1960, basisOfRecord == BASIS2,
                stateProvince == STATE) |>
-  galah_group_by(scientificName) |>
+  galah_group_by("species") |>
   atlas_counts(type = "record", limit = NULL)
 
-# need to include a call to galah_select()
+# for actual records, need to include a call to galah_select()
 check2 <- galah_call() |>
   galah_identify("Varanus rosenbergi") |>
   galah_filter(year >= 1960, basisOfRecord == BASIS2,
@@ -72,5 +75,9 @@ write_csv(check3, "/media/sf_Ubuntu_102/temp1/check3.csv")
 
 # 89 possibilities for IBRA7 regions
 check4 <- search_field_values("cl1048", limit = 100)
+# not clear why this only returns 48 fields:
+check2 <- seach_fields("all")
+# but this returns all 791 fields:
+check2a <- show_all_fields()
 
-
+letters <- rename(letters,c("old.x" = "new.x", "old.y" = "new.y"))

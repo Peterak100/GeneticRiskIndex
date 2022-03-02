@@ -28,15 +28,16 @@ precategorize_chunk <- function(taxa) {
      identity
 }
 
-# ALA queries #############################################################
+#### ALA queries #############################################
 
 # Add columns for each taxon of statewide and national observation counts
+# don't need to rename 'count' column for all_counts()
 add_count_cols <- function(taxa) {
   cat("\nGetting taxon counts for initial filtering...\n")
   count_taxa <- filter(taxa, assess == "ALA") 
-  state_counts <- get_state_counts(count_taxa) %>%
+  state_counts <- get_state_counts(count_taxa) |>
     rename(state_count = count, ala_search_term = species)
-  all_counts <- get_all_counts(count_taxa) %>% rename(ala_search_term = species)
+  all_counts <- get_all_counts(count_taxa) |> rename(ala_search_term = species)
   taxa <- left_join(taxa, state_counts, by = "ala_search_term", all.x=TRUE)
   taxa <- left_join(taxa, all_counts, by = "ala_search_term", all.x=TRUE)
   cat("Counts retrieved successfully.\n\n")
@@ -44,6 +45,9 @@ add_count_cols <- function(taxa) {
 }
 
 # Retrieve state counts from ALA
+# ala_search_term field needs to be equivalent to 'species' on ALA
+# to test for a single taxon (say #6): taxa6 <- taxa[6,]
+# then: x <- get_state_counts(taxa6)
 ### since v1.4
 ### use galah_identify() instead of select_taxa()
 ### use atlas_counts() instead of ala_counts()
@@ -51,17 +55,22 @@ add_count_cols <- function(taxa) {
 get_state_counts <- function(taxa) {
   galah_call() |>
     galah_identify(taxa$ala_search_term) |>
-    galah_filter(year >= 1960, basisOfRecord == BASIS2,
+    galah_filter(year >= as.character(TIME_START),
+                 year <= as.character(TIME_END),
+                 basisOfRecord == BASIS2,
                  stateProvince == STATE) |>
     galah_group_by("species") |>
     atlas_counts(type = "record", limit = NULL)
 }
 
 # Retrieve national counts from ALA
+# don't need to rename
 get_all_counts <- function(taxa) {
   galah_call() |>
     galah_identify(taxa$ala_search_term) |>
-    galah_filter(year >= 1960, basisOfRecord == BASIS2) |>
+    galah_filter(year >= as.character(TIME_START),
+                 year <= as.character(TIME_END),
+                 basisOfRecord == BASIS2) |>
     galah_group_by("species") |>
     atlas_counts(type = "record", limit = NULL)
 }

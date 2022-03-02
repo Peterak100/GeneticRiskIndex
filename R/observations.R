@@ -1,4 +1,3 @@
-
 # Get observation data, precluster it into numbered groups,
 # and write to both csv and raster files ##
 # Main method called from scripts 
@@ -35,7 +34,8 @@ process_observations <- function(taxa, mask_layer, taxapath,
       })
     }
 
-    # Add possible error messages, filter category, precluser/orphan numbers and cellcounts to dataframe
+    # Add possible error messages, filter category,
+    # precluster/orphan numbers and cellcounts to dataframe
     preclustered_taxa[i, "error"] <- paste(out[1])
     preclustered_taxa[i, "filter_category"] <- out[2]
     preclustered_taxa[i, "num_preclusters"] <- out[3]
@@ -64,7 +64,8 @@ try_taxon_observations <- function(taxon, taxapath, force_download) {
   num_orphans <- sum(obs$precluster == 0)
   precluster_cellcount <- cell_counts[1]
   orphan_cellcount <- cell_counts[2]
-  list(error_string, filter_category, num_preclusters, num_orphans, precluster_cellcount, orphan_cellcount)
+  list(error_string, filter_category, num_preclusters, num_orphans,
+       precluster_cellcount, orphan_cellcount)
 }
 
 # Load and filter observations
@@ -76,7 +77,7 @@ load_and_filter <- function(taxon, taxapath, force_download) {
 }
 
 
-# Retrieving observation data from ALA ######################################################
+# Retrieving observation data from ALA ########################################
 
 # Download or load cached observation data
 ### HAS TYPO 'dowload'
@@ -107,7 +108,7 @@ download_observations <- function(taxon) {
     taxa = select_taxa(taxon$ala_search_term),
     filters = ALA_FILTERS
   )
-  cat("  Observations retreived successfully\n")
+  cat("  Observations retrieved successfully\n")
   return(obs)
 }
 
@@ -139,6 +140,10 @@ remove_missing_coords <- function(obs) {
   drop_na(obs, any_of(c("decimalLatitude", "decimalLongitude")))
 }
 
+### TO DO:
+### function to remove nonsensical coords? (beyond Australian continent)
+### latitude < -45 or > -11; longitude < 112 or > 154
+
 # Remove duplicate locations
 remove_location_duplicates <- function(obs) {
   # Sort by date first so we take the newest record
@@ -147,7 +152,7 @@ remove_location_duplicates <- function(obs) {
 }
 
 
-# Cluster observation data ######################################################
+# Cluster observation data ####################################################
 
 # Categorise preclusters and add preclusters column to dataframe
 precluster_observations <- function(obs, taxon) {
@@ -159,7 +164,8 @@ precluster_observations <- function(obs, taxon) {
 # Add transformed coordinates "x" an "y" for accurate distance calculations
 ## HAS TYPO 'euclidan'
 add_euclidan_coords <- function(obs) {
-  sf::st_as_sf(obs, coords = c("decimalLongitude", "decimalLatitude"), crs = LATLON_EPSG) %>% 
+  sf::st_as_sf(obs, coords = c("decimalLongitude", "decimalLatitude"),
+               crs = LATLON_EPSG) %>% 
     sf::st_transform(crs = METRIC_EPSG) %>% 
     mutate(x = sf::st_coordinates(.)[,1], y = sf::st_coordinates(.)[,2]) %>% 
     sf::st_drop_geometry()
@@ -167,7 +173,8 @@ add_euclidan_coords <- function(obs) {
 
 # Scan preclusters and add precluster index to observations
 scan_clusters <- function(obs, eps) {
-  preclusters <- fpc::dbscan(obs[, c("x", "y")], eps = eps * 1000 * EPSILON_SENSITIVITY_SCALAR, MinPts = 3)
+  preclusters <- fpc::dbscan(obs[, c("x", "y")],
+                  eps = eps * 1000 * EPSILON_SENSITIVITY_SCALAR, MinPts = 3)
   mutate(obs, precluster = preclusters$cluster)
 }
 
@@ -205,26 +212,32 @@ write_precluster <- function(obs, taxon, mask_layer, taxapath) {
   # Create a dataframe and raster for preclusters
   preclustered <- buffer_preclustered(shapes, scaled_eps)
   cat("Preclusters:", nrow(preclustered), "\n")
-  precluster_rast <- shapes_to_raster(preclustered, taxon, mask_layer, taxonpath)
+  precluster_rast <- shapes_to_raster(preclustered, taxon, mask_layer,
+                taxonpath)
   # Save a plot for fast inspection
-  png(file.path(plotpath, paste0(sensitivity_name(taxon$ala_search_term, "preclusters"), ".png")))
-  plot(precluster_rast, main=sensitivity_title(taxon$ala_search_term, "preclusters"))
+  png(file.path(plotpath, paste0(sensitivity_name(taxon$ala_search_term,
+                "preclusters"), ".png")))
+  plot(precluster_rast, main=sensitivity_title(taxon$ala_search_term,
+                "preclusters"))
   dev.off()
   # Write a preclusters csv, with cluster numbers attached
   pixel_freq <- freq(precluster_rast)
   left_join(shapes, pixel_freq, copy=TRUE, by=c("precluster" = "value")) %>%
-    write_csv(file.path(taxonpath, paste0(sensitivity_name("preclusters"), ".csv")))
+    write_csv(file.path(taxonpath, paste0(sensitivity_name("preclusters"),
+                ".csv")))
     
   # Create a dataframe and raster for orphans
   orphans <- buffer_orphans(shapes, scaled_eps)
   orphan_rast <- shapes_to_raster(orphans, taxon, mask_layer, taxonpath)
   # Save a plot for fast inspection
-  png(file.path(plotpath, paste0(sensitivity_name(taxon$ala_search_term, "orphans"), ".png")))
+  png(file.path(plotpath, paste0(sensitivity_name(taxon$ala_search_term,
+                "orphans"), ".png")))
   plot(orphan_rast, main=sensitivity_title(taxon$ala_search_term, "orphans"))
   dev.off()
 
   # Write an orphans csv
-  write_csv(orphans, file.path(taxonpath, paste0(sensitivity_name("orphans"), ".csv")))
+  write_csv(orphans, file.path(taxonpath, paste0(sensitivity_name("orphans"),
+                ".csv")))
 
   # Make a crop template by trimming the empty values from a
   # combined precluster/orphan raster, with some added padding.
@@ -232,9 +245,12 @@ write_precluster <- function(obs, taxon, mask_layer, taxapath) {
     padded_trim()
 
   # Crop and write rasters
-  precluster_filename <- file.path(taxonpath, paste0(sensitivity_name("preclusters"), ".tif"))
-  orphan_filename <- file.path(taxonpath, paste0(sensitivity_name("orphans"), ".tif"))
-  short_circuit_filename <- file.path(taxonpath, paste0(sensitivity_name("short_circuit"), ".tif"))
+  precluster_filename <- file.path(taxonpath,
+                paste0(sensitivity_name("preclusters"), ".tif"))
+  orphan_filename <- file.path(taxonpath, paste0(sensitivity_name("orphans"),
+                ".tif"))
+  short_circuit_filename <- file.path(taxonpath,
+                paste0(sensitivity_name("short_circuit"), ".tif"))
   crop(precluster_rast, crop_rast, filename=precluster_filename, overwrite=TRUE)
   crop(orphan_rast, crop_rast, filename=orphan_filename, overwrite=TRUE)
   # Make a short circuit and orphans file, as the short circuit may
@@ -249,8 +265,10 @@ write_precluster <- function(obs, taxon, mask_layer, taxapath) {
 # Add the cell counts
 add_cell_counts <- function() {
   taxonpath = taxon_path(taxon)
-  orphans_rast <- rast(file.path(taxonpath, paste0(sensitivity_name("orphans"), ".tif")))
-  preclusters_rast <- rast(file.path(taxonpath, paste0(sensitivity_name("preclusters"), ".tif")))
+  orphans_rast <- rast(file.path(taxonpath, paste0(sensitivity_name("orphans"),
+              ".tif")))
+  preclusters_rast <- rast(file.path(taxonpath,
+              paste0(sensitivity_name("preclusters"), ".tif")))
   orphan_cells <- count(orphans_rast)
   preclusters_cells <- count(preclusters_rast)
   mutate(taxa, prop_preclusters = prop_preclusters, prop_orphans = prop_orphans)
@@ -283,7 +301,8 @@ shapes_to_raster <- function(shapes, taxon, mask_layer, taxonpath) {
   shapevect <- terra::vect(shapes)
   print(shapevect)
   if (length(shapevect) > 0) {
-      obs_raster <- terra::rasterize(shapevect, mask_layer, field = "precluster") 
+      obs_raster <- terra::rasterize(shapevect, mask_layer,
+                field = "precluster") 
   } else {
       mask_layer * 0
   }
@@ -298,7 +317,8 @@ padded_trim <- function(rast, padding=10) {
   yrange <- terra::ymax(rast) - terra::ymin(rast) # number of rows
   xPix <- ceiling(xrange / xresolution)
   yPix <- ceiling(yrange / yresolution)
-  xdif <- ((padding * xresolution) - xrange) / 2 # the difference of extent divided by 2 to split on both sides
+  xdif <- ((padding * xresolution) - xrange) / 2
+  # the difference of extent divided by 2 to split on both sides
   ydif <- ((padding * yresolution) - yrange) / 2
   x <- ext(
       terra::xmin(rast) - xdif, 
@@ -313,7 +333,7 @@ padded_trim <- function(rast, padding=10) {
   return(padded)
 }
 
-# Label taxa that we don't need to process due to cluster numbers ######################################
+# Label taxa that we don't need to process due to cluster numbers #############
 
 label_by_clusters <- function(taxa) {
   taxa %>%
@@ -325,7 +345,8 @@ label_by_clusters <- function(taxa) {
 
 # - That have too many orphan cells compared to precluster cells
 label_high_orphan_area <- function(taxa) {
-  id <- taxa$orphan_cellcount / taxa$precluster_cellcount > MAX_ORPHAN_PRECLUSTER_RATIO
+  id <- taxa$orphan_cellcount / taxa$precluster_cellcount > 
+    MAX_ORPHAN_PRECLUSTER_RATIO
   taxa$filter_category[id] <- "high_ratio_orphan_cells"  
   return(taxa)
 }
