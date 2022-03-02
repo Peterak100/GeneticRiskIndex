@@ -47,28 +47,23 @@ add_count_cols <- function(taxa) {
 ### since v1.4
 ### use galah_identify() instead of select_taxa()
 ### use atlas_counts() instead of ala_counts()
+### use galah_group_by() instead of group_by()
 get_state_counts <- function(taxa) {
-  ala_counts(
-    taxa = select_taxa(taxa$ala_search_term), 
-    filters = ALA_FILTERS,
-    group_by = "species",
-    type = "record",
-    limit = NULL
-  )
+  galah_call() |>
+    galah_identify(taxa$ala_search_term) |>
+    galah_filter(year >= 1960, basisOfRecord == BASIS2,
+                 stateProvince == STATE) |>
+    galah_group_by("species") |>
+    atlas_counts(type = "record", limit = NULL)
 }
 
 # Retrieve national counts from ALA
 get_all_counts <- function(taxa) {
-  ala_counts(
-    taxa = select_taxa(taxa$ala_search_term), 
-    filters = select_filters(
-      year = TIMESPAN,
-      basisOfRecord = BASIS
-    ),
-    group_by = "species",
-    type = "record",
-    limit = NULL
-  )
+  galah_call() |>
+    galah_identify(taxa$ala_search_term) |>
+    galah_filter(year >= 1960, basisOfRecord == BASIS2) |>
+    galah_group_by("species") |>
+    atlas_counts(type = "record", limit = NULL)
 }
 
 

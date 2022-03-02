@@ -106,27 +106,35 @@ TIMESPAN <- c(TIME_START:TIME_END)
 galah_config(email=ALA_EMAIL)
 # In case downloads run out of time
 options(timeout=500)
+# expanded basisOfRecord (cannot put >1 option in TOML file?):
+## other options are:
+## "MACHINE_OBSERVATION","OBSERVATION","PRESERVED_SPECIMEN","UNKNOWN"
+BASIS2 <- c(BASIS, "MATERIAL_SAMPLE")
 
 # Plot rasters
 # HABITAT_RASTER_PATH %>% terra::rast() %>% plot
 # FIRE_SEVERITY_RASTER_PATH %>% terra::rast() %>% plot
 
 # Get filters for ALA queries, ahead of time as this actually pings the 
-# server to check the filter. Doing this too often can cause ALA to hang.
+# server to check the filter. Doing this too often can cause ALA to hang?
 # either use '==' (or '%in%' for this...?)
-ALA_FILTERS = galah_filter(
-  # Limit observations by year, basis and state
-  year == TIMESPAN,
-  basisOfRecord == BASIS,
-  stateProvince == STATE
-)
+# Limits observation records by year, basis and state
+## ALA_FILTERS = galah_filter(year == TIMESPAN, basisOfRecord == BASIS,
+##   stateProvince == STATE)
 
 mask_layer <- terra::rast(HABITAT_RASTER_PATH) < 0
-# terra::crs(mask_layer) <- as.character(sp::CRS(paste0("+init=epsg:",
-#   METRIC_EPSG)))
+# new code (Feb 2022):
+terra::crs(mask_layer) <- paste0("+init=epsg:", METRIC_EPSG) |>
+  sp::CRS() |>
+  as.character()
 
-## this apparently works but throws some errors:
-terra::crs(mask_layer) <- sp::CRS(paste0("+init=epsg:", METRIC_EPSG))
+## old version:
+# terra::crs(mask_layer) <- as.character(sp::CRS(paste0("+init=epsg:",
+#              METRIC_EPSG)))
+
+## this apparently works (?) but throws an error:
+## [crs] expected a character string, not a CRS object
+# terra::crs(mask_layer) <- sp::CRS(paste0("+init=epsg:", METRIC_EPSG))
 # plot(mask_layer)
 # interactive plot of map
 # library(mapview)
