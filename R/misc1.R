@@ -80,4 +80,6 @@ check2 <- seach_fields("all")
 # but this returns all 791 fields:
 check2a <- show_all_fields()
 
+## DIFFERENCE BETWEEN precategorized_taxa and preclustered_taxa??
+
 write_csv(precategorized_taxa, "/media/sf_Ubuntu_102/temp1/test7.csv")

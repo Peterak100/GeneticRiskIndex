@@ -1,8 +1,7 @@
-
 # Main method to call from scripts
 # Set up files for use by Circuitscape.jl later on
 # taxa is a dataframe, taxonpath is the directory
-# where taxon directries are created
+# where taxon directories are created
 prepare_resistance_files <- function(taxa, taxapath) {
   if (nrow(taxa) == 0) {
     return() 

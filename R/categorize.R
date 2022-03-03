@@ -1,4 +1,4 @@
-# Prefiltering #############################################################
+### Prefiltering ###########################################################
 
 # Main function called from scripts
 # Categorizes risk where distance/resistance are not needed

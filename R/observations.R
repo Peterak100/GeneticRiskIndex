@@ -54,7 +54,7 @@ try_taxon_observations <- function(taxon, taxapath, force_download) {
   # Download, filter and precluster observation records
   obs <- load_and_filter(taxon, taxapath, force_download)
   # Create rasters with numbered preclustered observations
-  # If there are any clusters
+  # If there are any preclusters
   if (max(obs$precluster) != 0) {
     cell_counts <- write_precluster(obs, taxon, mask_layer, taxapath)
   } else {
@@ -79,7 +79,7 @@ load_and_filter <- function(taxon, taxapath, force_download) {
 }
 
 
-# Retrieving observation data from ALA ########################################
+### Retrieving observation data from ALA ###################################
 
 # Download or load cached observation data
 ## runs one of two functions: either reads previously saved records
@@ -123,7 +123,7 @@ download_observations <- function(taxon) {
 }
 
 
-# Clean observation data ######################################################
+### Clean observation data ##################################################
 
 # Filter observations data #####
 filter_observations <- function(obs, taxon) {
@@ -162,7 +162,7 @@ remove_location_duplicates <- function(obs) {
 }
 
 
-# Cluster observation data ####################################################
+### Cluster observation data ################################################
 
 # Categorise preclusters and add preclusters column to dataframe
 precluster_observations <- function(obs, taxon) {
@@ -191,7 +191,7 @@ add_euclidean_coords <- function(obs) {
 ## Victoria itself is slightly smaller - ~792 km x 549 km?
 ### WHERE IS EPSILON_SENSITIVITY_SCALAR DEFINED???
 ## as an at least temporary solution...
-## EPSILON_SENSITIVITY_SCALAR <- 1
+EPSILON_SENSITIVITY_SCALAR <- 1
 #### to test this function:
 #### test1 <- fpc::dbscan(obs[,c("x","y")],
 ####             eps = taxon$epsilon * 1000, MinPts = 3)
@@ -204,7 +204,6 @@ scan_clusters <- function(obs, eps) {
   mutate(obs, precluster = preclusters$cluster)
 }
 
-
 dispersal_distance <- function(taxon) {
   if (taxon$category == "Plants") {
     max(c(taxon$male_disp, taxon$female_disp))
@@ -213,8 +212,7 @@ dispersal_distance <- function(taxon) {
   }
 }
 
-
-#### Write observation data ##################################################
+### Write observation data ##################################################
 
 sf_to_df <- function(x){
   if (is(x, "sf")) {
