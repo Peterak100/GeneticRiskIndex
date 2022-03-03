@@ -31,7 +31,8 @@ precategorize_chunk <- function(taxa) {
 #### ALA queries #############################################
 
 # Add columns for each taxon of statewide and national observation counts
-# don't need to rename 'count' column for all_counts()
+# creates two temporary dataframes and renames column headings
+# don't need to rename 'count' column for all_counts
 add_count_cols <- function(taxa) {
   cat("\nGetting taxon counts for initial filtering...\n")
   count_taxa <- filter(taxa, assess == "ALA") 
@@ -48,6 +49,7 @@ add_count_cols <- function(taxa) {
 # ala_search_term field needs to be equivalent to 'species' on ALA
 # to test for a single taxon (say #6): taxa6 <- taxa[6,]
 # then: x <- get_state_counts(taxa6)
+# use BASIS2 because CONFIG.TOML file apparently cannot contain a list
 ### since v1.4
 ### use galah_identify() instead of select_taxa()
 ### use atlas_counts() instead of ala_counts()
@@ -76,7 +78,7 @@ get_all_counts <- function(taxa) {
 }
 
 
-# Filtering #############################################################
+### Filtering ########################################################
 
 # Add a column that classifies risk. Initially "unknown".
 add_risk_col <- function(taxa) {
@@ -100,7 +102,7 @@ label_few_observations <- function(taxa) {
   return(taxa)
 }
 
-# Label species not relevent to STATE e.g. Victoria
+# Label species not relevant to STATE e.g. Victoria
 label_low_regional_relevance <- function(taxa) {
   # TODO: is the proportion enough?
   ids <- (taxa$state_count / taxa$count) < MIN_PROP_IN_STATE
@@ -116,14 +118,13 @@ label_not_assessed <- function(taxa) {
   return(taxa)
 }
 
-## added a return after '&'
+## disperse_model is column 40
 label_isolation_by_distance <- function(taxa) {
   taxa$filter_category[is.na(taxa$filter_category) &
                 taxa$disperse_model == "Distance"] <- "isolation_by_distance"
   return(taxa)
 }
 
-## added a return after '&'
 label_isolation_by_resistance <- function(taxa) {
   taxa$filter_category[is.na(taxa$filter_category) &
                 taxa$disperse_model == "Habitat"] <- "isolation_by_resistance"

@@ -1,6 +1,7 @@
 # Get observation data, precluster it into numbered groups,
 # and write to both csv and raster files ##
-# Main method called from scripts 
+# Main method called from scripts
+
 process_observations <- function(taxa, mask_layer, taxapath,
     force_download=FALSE, throw_errors=FALSE) {
   # Add new columns to taxa dataframe
@@ -47,6 +48,7 @@ process_observations <- function(taxa, mask_layer, taxapath,
   return(label_by_clusters(preclustered_taxa))
 }
 
+
 # Block to run either with or without a try/catch block
 try_taxon_observations <- function(taxon, taxapath, force_download) {
   # Download, filter and precluster observation records
@@ -69,9 +71,9 @@ try_taxon_observations <- function(taxon, taxapath, force_download) {
 }
 
 # Load and filter observations
-### HAS TYPO 'dowload'
+### HAD TYPO 'dowload'
 load_and_filter <- function(taxon, taxapath, force_download) {
-  load_or_dowload_obs(taxon, taxapath, force_download) %>%
+  load_or_download_obs(taxon, taxapath, force_download) %>%
     filter_observations(taxon) %>%
     precluster_observations(taxon)
 }
@@ -80,8 +82,10 @@ load_and_filter <- function(taxon, taxapath, force_download) {
 # Retrieving observation data from ALA ########################################
 
 # Download or load cached observation data
-### HAS TYPO 'dowload'
-load_or_dowload_obs <- function(taxon, taxapath, force_download=FALSE) {
+## runs one of two functions: either reads previously saved records
+##  (if they have already been downloaded) or downloads from ALA and saves them
+### HAD TYPO 'dowload'
+load_or_download_obs <- function(taxon, taxapath, force_download=FALSE) {
   obs_csv_path <- file.path(taxon_path(taxon, taxapath), "observations.csv")
   if (!force_download && file.exists(obs_csv_path)) {
     obs <- read_cached_observations(taxon, obs_csv_path)
@@ -101,13 +105,19 @@ read_cached_observations <- function(taxon, csv_path) {
   return(obs)
 }
 
-# Get taxon observations from ALA using `galah`
+# Get individual taxon observations from ALA using `galah`
+### Updated from previous version, which had:
+## obs <- ala_occurrences(taxa = select_taxa(taxon$ala_search_term),
+##      filters = ALA_FILTERS)
+
 download_observations <- function(taxon) {
-  cat("  Retrieving observations from ALA for ", taxon$ala_search_term, "...\n")
-  obs <- ala_occurrences(
-    taxa = select_taxa(taxon$ala_search_term),
-    filters = ALA_FILTERS
-  )
+  cat(" Retrieving observations from ALA for ", taxon$ala_search_term, "...\n")
+  obs <- galah_call() |> galah_identify(taxon$ala_search_term) |>
+    galah_filter(year >= as.character(TIME_START),
+                 year <= as.character(TIME_END),
+                 basisOfRecord == BASIS2, stateProvince == STATE) |>
+    galah_select(group = "basic") |>
+    atlas_occurrences()
   cat("  Observations retrieved successfully\n")
   return(obs)
 }
@@ -118,9 +128,9 @@ download_observations <- function(taxon) {
 # Filter observations data #####
 filter_observations <- function(obs, taxon) {
     obs %>%
-      # maybe_remove_subspecies(taxon) %>%
-      remove_missing_coords() %>%
-      remove_location_duplicates() %>%
+      # maybe_remove_subspecies(taxon) |>
+      remove_missing_coords() |>
+      remove_location_duplicates() |>
       filter_by_fire_severity(taxon)
 }
 
@@ -146,8 +156,8 @@ remove_missing_coords <- function(obs) {
 
 # Remove duplicate locations
 remove_location_duplicates <- function(obs) {
-  # Sort by date first so we take the newest record
-  obs %>% arrange(desc(eventDate)) %>%
+  # Sort by date first so we retain the newest record
+  obs |> arrange(desc(eventDate)) |>
     distinct(decimalLatitude, decimalLongitude, .keep_all = TRUE)
 }
 
@@ -156,22 +166,38 @@ remove_location_duplicates <- function(obs) {
 
 # Categorise preclusters and add preclusters column to dataframe
 precluster_observations <- function(obs, taxon) {
-  obs %>%
-    add_euclidan_coords() %>%
+  obs |>
+    add_euclidean_coords() |>
     scan_clusters(taxon$epsilon)
 }
 
-# Add transformed coordinates "x" an "y" for accurate distance calculations
-## HAS TYPO 'euclidan'
-add_euclidan_coords <- function(obs) {
+# Add transformed coordinates "x" and "y" for accurate distance calculations
+## removes decimalLongitude and decimalLatitude columns on the left
+## and converts them to "x" and "y" columns on the right
+## HAD TYPO 'euclidan'
+add_euclidean_coords <- function(obs) {
   sf::st_as_sf(obs, coords = c("decimalLongitude", "decimalLatitude"),
-               crs = LATLON_EPSG) %>% 
-    sf::st_transform(crs = METRIC_EPSG) %>% 
-    mutate(x = sf::st_coordinates(.)[,1], y = sf::st_coordinates(.)[,2]) %>% 
+               crs = LATLON_EPSG) %>%
+    sf::st_transform(crs = METRIC_EPSG) %>%
+    mutate(x = sf::st_coordinates(.)[,1], y = sf::st_coordinates(.)[,2]) %>%
     sf::st_drop_geometry()
 }
 
 # Scan preclusters and add precluster index to observations
+# produces a list of 4 items: cluster, eps, MinPts, isseed
+## presumably "x" and "y" coords here are approximately in metres
+## habitat.tif layer is 3620 x 225 = 814500 metres east-west, and
+##   2530 x 225 = 569250 metres north-south
+## Victoria itself is slightly smaller - ~792 km x 549 km?
+### WHERE IS EPSILON_SENSITIVITY_SCALAR DEFINED???
+## as an at least temporary solution...
+## EPSILON_SENSITIVITY_SCALAR <- 1
+#### to test this function:
+#### test1 <- fpc::dbscan(obs[,c("x","y")],
+####             eps = taxon$epsilon * 1000, MinPts = 3)
+#### test2 <- mutate (obs, precluster = test1$cluster)
+#### plot(test1, obs$x, obs$y)
+##### for tiger snake: 18 preclusters & 21 orphans
 scan_clusters <- function(obs, eps) {
   preclusters <- fpc::dbscan(obs[, c("x", "y")],
                   eps = eps * 1000 * EPSILON_SENSITIVITY_SCALAR, MinPts = 3)
@@ -188,7 +214,7 @@ dispersal_distance <- function(taxon) {
 }
 
 
-# Write observation data ######################################################
+#### Write observation data ##################################################
 
 sf_to_df <- function(x){
   if (is(x, "sf")) {
