@@ -14,7 +14,7 @@ process_observations <- function(taxa, mask_layer, taxapath,
   ) 
   num_preclusters <- 0
 
-  # Loop over each taxa
+  # Loop over each taxon
   # We do some slightly complicated return value handling here
   # to allow for error catching.
   for (i in 1:nrow(preclustered_taxa)) {
@@ -189,18 +189,18 @@ add_euclidean_coords <- function(obs) {
 ## habitat.tif layer is 3620 x 225 = 814500 metres east-west, and
 ##   2530 x 225 = 569250 metres north-south
 ## Victoria itself is slightly smaller - ~792 km x 549 km?
-### WHERE IS EPSILON_SENSITIVITY_SCALAR DEFINED???
-## as an at least temporary solution...
-EPSILON_SENSITIVITY_SCALAR <- 1
+
 #### to test this function:
 #### test1 <- fpc::dbscan(obs[,c("x","y")],
 ####             eps = taxon$epsilon * 1000, MinPts = 3)
 #### test2 <- mutate (obs, precluster = test1$cluster)
 #### plot(test1, obs$x, obs$y)
 ##### for tiger snake: 18 preclusters & 21 orphans
+## this had eps multiplied by EPSILON_SENSITIVITY_SCALAR, but
+##  dbscan distance should simply be epsilon (but in metres, not kms)
 scan_clusters <- function(obs, eps) {
   preclusters <- fpc::dbscan(obs[, c("x", "y")],
-                  eps = eps * 1000 * EPSILON_SENSITIVITY_SCALAR, MinPts = 3)
+                eps = eps * 1000, MinPts = 3)
   mutate(obs, precluster = preclusters$cluster)
 }
 
@@ -313,6 +313,10 @@ buffer_orphans <- function(shapes, scaled_eps) {
     buffer_obs(scaled_eps)
 }
 
+# buffers obs by scaled_eps, which is dispersal distance * 1000 * 
+## EPSILON_SENSITIVITY_SCALAR (which should be 0.5, or slightly less?
+##  because individual males & individual females can 'meet-in-the-middle')
+## see line 234
 buffer_obs <- function(obs, scaled_eps) {
   obs %>% sf::st_buffer(dist = scaled_eps) %>% 
     dplyr::group_by(precluster) %>% 
@@ -357,7 +361,7 @@ padded_trim <- function(rast, padding=10) {
   return(padded)
 }
 
-# Label taxa that we don't need to process due to cluster numbers #############
+### Label taxa that we don't need to process due to cluster numbers ##########
 
 label_by_clusters <- function(taxa) {
   taxa %>%

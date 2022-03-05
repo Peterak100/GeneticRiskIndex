@@ -87,16 +87,18 @@ add_risk_col <- function(taxa) {
 }
 
 # Label very common species as "abundant"
+## current thresholds: > 100K records for Vic, or > 300K records for ALA total
 label_many_observations <- function(taxa) {
-  ids <- taxa$state_count > MAX_OBSERVATIONS
+  ids <- taxa$state_count > MAX_OBSERVATIONS | taxa$count > MAX_OBS_TOTAL
   taxa$risk[ids] <- "abundant"
   taxa$filter_category[ids] <- "many_observations"
   return(taxa)
 }
 
 # Label very rare species as "rare"
+### was previously based on taxa$state_count
 label_few_observations <- function(taxa) {
-  ids <- taxa$state_count < MIN_OBSERVATIONS
+  ids <- taxa$count < MIN_OBSERVATIONS
   taxa$risk[ids] <- "rare"
   taxa$filter_category[ids] <- "few_observations"
   return(taxa)

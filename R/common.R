@@ -24,7 +24,7 @@ LATLON_EPSG <- 4326
 
 # Galah doesn't seem to handle more than about 1000 rows
 # So 800 is a conservative estimate
-GALAH_MAXROWS <- 800
+GALAH_MAXROWS <- 700
 
 # Get the directory path for files relating to a specific taxon
 taxon_path <- function(taxon, taxapath) {
@@ -36,17 +36,19 @@ taxon_path <- function(taxon, taxapath) {
   return(taxonpath)
 }
 
-# Download from a URL if the file doesn't exist allready
+# Download from a URL if the file doesn't exist already
 maybe_download <- function(url, path) {
   if (!file.exists(path)) {
     download.file(url, path)
   }
 }
 
+## what does this do?
 sensitivity_name <- function(...) {
   paste(..., SENSITIVITY_SUFFIX, sep="_")
 }
 
+# what does this do?
 sensitivity_title <- function(...) {
   paste(..., SENSITIVITY_SUFFIX, sep=" ")
 }
@@ -76,6 +78,18 @@ RESISTANCE_RASTER <- "resistance.tif"
 CONFIG_FILE <- "config.toml"
 CONFIG_PATH <- file.path(datapath, CONFIG_FILE)
 
+### EPSILON_SENSITIVITY_SCALAR was previously not defined!?
+## it is an adjustment for buffering of observation record points
+## ideally should be 0.5 (i.e. half of epsilon) but this would result in
+## ambiguity with the possibility of either two different preclusters, or
+## two subparts of the same precluster just touching. Very slightly less
+## avoids this.
+### Note: epsilon represents the assumption that dispersing males & females
+##   are able to 'meet-in-the-middle' - i.e. even if individual males or
+##   females sometimes disperse a little further, they don't find a mate
+##   so any such movements do not contribute to population connectivity
+EPSILON_SENSITIVITY_SCALAR <- 0.495
+
 # Download from s3 bucket if it is passed as a command line argument
 args = commandArgs(trailingOnly=TRUE)
 if (length(args) > 0) {
@@ -100,6 +114,8 @@ if (length(args) > 0) {
 
 # Get config variables from the toml file
 list2env(parseTOML(file.path(datapath, CONFIG_FILE)), globalenv())
+
+## other config variables...
 # Define timespan
 TIMESPAN <- c(TIME_START:TIME_END)
 # ALA needs an email address for some reason
@@ -109,7 +125,7 @@ options(timeout=500)
 # expanded basisOfRecord (cannot put >1 option in TOML file?):
 ## other options are:
 ## "MACHINE_OBSERVATION","OBSERVATION","PRESERVED_SPECIMEN","UNKNOWN"
-BASIS2 <- c(BASIS, "MATERIAL_SAMPLE")
+BASIS3 <- c(BASIS, "MATERIAL_SAMPLE", "PRESERVED_SPECIMEN")
 
 # Plot rasters
 # HABITAT_RASTER_PATH %>% terra::rast() %>% plot
@@ -124,6 +140,10 @@ BASIS2 <- c(BASIS, "MATERIAL_SAMPLE")
 
 mask_layer <- terra::rast(HABITAT_RASTER_PATH) < 0
 # new code (Feb 2022):
+# sometimes errors, sometimes doesn't?
+## In showSRID(uprojargs, format = "PROJ", multiline = "NO",
+##    prefer_proj = prefer_proj):
+## Discarded datum Geocentric_Datum_of_Australia_1994 in Proj4 definition
 terra::crs(mask_layer) <- paste0("+init=epsg:", METRIC_EPSG) |>
   sp::CRS() |>
   as.character()

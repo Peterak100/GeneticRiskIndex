@@ -15,7 +15,7 @@ taxa <- read.csv(BATCH_TAXA_CSV_PATH, header = TRUE)
 ## adds 4 columns to BATCH_TAXA_CSV:
 ## "state_count", "count", "risk", "filter_category"
 precategorized_taxa <- precategorize_risk(taxa)
-# head(precategorized_taxa)
+# head(precategorized_taxa[,c(1,2,99:102)],14)
 # precategorized_taxa$filter_category
 
 # Taxa to access based on distance metrics
@@ -24,26 +24,38 @@ write_csv(precategorized_taxa,
           file.path(groupingspath, "precategorized_taxa.csv"))
 
 
-##############################################################################
-# Manual single taxon observations and preclustering for testing:
+#############################################################################
+## Manual single taxon observations and preclustering for testing:
 taxon <- precategorized_taxa[1, ]
+taxon$ala_search_term
 ## these 3 functions are from observations.R
 ## filter_observations(taxon) has 3 (or 4) sub functions...
 ## the last of these is from fire_severity.R
 ## precluster_observations(taxon) has 2 sub functions...
-##
+
 obs <- load_or_download_obs(taxon, taxapath, force_download=FALSE) |>
   filter_observations(taxon) |>
   precluster_observations(taxon)
-#
-# taxonpath <- taxon_path(taxon, taxapath)
-# shapes <- sf::st_as_sf(obs, coords = c("x", "y"), crs = METRIC_EPSG)
-# scaled_eps <- taxon$eps * 1000 / 1.9
-#
-# Create a full-sized raster for preclusters
-# preclustered <- buffer_preclustered(shapes, scaled_eps)
-# cat("Preclusters:", nrow(preclustered), "\n")
-# precluster_rast <- shape_to_raster(preclustered, taxon, mask_layer, taxonpath)
+# check preclustering...
+head(obs[,7:9],43) |> as.data.frame()
+
+taxonpath <- taxon_path(taxon, taxapath)
+# combines "x" and "y" columns into single "geometry" column
+shapes <- sf::st_as_sf(obs, coords = c("x", "y"), crs = METRIC_EPSG)
+### c.f. observations.R line 234,
+scaled_eps <- taxon$epsilon * 1000 * EPSILON_SENSITIVITY_SCALAR
+
+## Create a full-sized raster for preclusters
+preclustered <- buffer_preclustered(shapes, scaled_eps)
+cat("Preclusters:", nrow(preclustered), "\n")
+## this can now be plotted to check result...
+plot(preclustered)
+
+precluster_rast <- shapes_to_raster(preclustered, taxon, mask_layer, taxonpath)
+## this can also be plotted
+### COULD NOT FIND FUNCTION shape_to_raster (TYPO?)
+
+
 # pixel_freq <- freq(precluster_rast)
 # pixel_freq
 # colnames(shapes)
@@ -60,6 +72,8 @@ isolation_taxa <- filter(precategorized_taxa, filter_category %in%
             c("isolation_by_distance", "isolation_by_resistance"))
 nrow(isolation_taxa)
 head(isolation_taxa)
+
+## 4th March 5pm checked above here!!!!!!!
 
 # load/download, filter and precluster observations for all taxa
 preclustered_isolation_taxa <- process_observations(isolation_taxa,
